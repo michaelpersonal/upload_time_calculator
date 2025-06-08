@@ -4,55 +4,158 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Upload Time Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #8360c3, #2ebf91);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background-color: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      width: 350px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 24px;
+      color: #6a1b9a;
+      margin-bottom: 30px;
+    }
+    .section {
+      margin-bottom: 20px;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    .button-group {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+    .unit-button {
+      flex: 1;
+      margin: 0 5px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #f0f0f0;
+      cursor: pointer;
+    }
+    .unit-button.active {
+      background-color: #6a1b9a;
+      color: white;
+      font-weight: bold;
+    }
+    #calculateBtn {
+      margin-top: 20px;
+      padding: 12px;
+      background: linear-gradient(to right, #8360c3, #2ebf91);
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      width: 100%;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #333;
+    }
+  </style>
 </head>
 <body>
-  <h1>Upload Time Calculator</h1>
-  <label for="fileSize">File Size:</label>
-  <input type="number" id="fileSize" placeholder="e.g., 14">
-
-  <label for="fileUnit">Unit:</label>
-  <select id="fileUnit">
-    <option value="GB">GB</option>
-    <option value="MB">MB</option>
-  </select>
-
-  <label for="speed">Speed (MB/s):</label>
-  <input type="number" id="speed" placeholder="e.g., 4">
-
-  <button onclick="calculate()">Calculate</button>
-
-  <h2 id="result"></h2>
+  <div class="container">
+    <h1>Upload Time Calculator</h1>
+    <div class="section">
+      <label>File Size</label>
+      <input type="number" id="fileSize" placeholder="Enter file size" step="any">
+      <div class="button-group">
+        <div class="unit-button active" data-unit="GB" onclick="selectFileUnit(this)">GB</div>
+        <div class="unit-button" data-unit="MB" onclick="selectFileUnit(this)">MB</div>
+        <div class="unit-button" data-unit="TB" onclick="selectFileUnit(this)">TB</div>
+      </div>
+    </div>
+    <div class="section">
+      <label>Upload Speed</label>
+      <input type="number" id="speed" placeholder="Enter upload speed" step="any">
+      <div class="button-group">
+        <div class="unit-button active" data-speed="MBps" onclick="selectSpeedUnit(this)">MB/s</div>
+        <div class="unit-button" data-speed="Mbps" onclick="selectSpeedUnit(this)">Mbps</div>
+        <div class="unit-button" data-speed="KBps" onclick="selectSpeedUnit(this)">KB/s</div>
+      </div>
+    </div>
+    <button id="calculateBtn" onclick="calculate()">CALCULATE UPLOAD TIME</button>
+    <div id="result"></div>
+  </div>
 
   <script>
-    function calculateUploadTime(fileSize, fileUnit, speedMBps) {
-      let fileSizeMB;
-      if (fileUnit.toLowerCase() === 'gb') {
-        fileSizeMB = fileSize * 1024;
-      } else if (fileUnit.toLowerCase() === 'mb') {
-        fileSizeMB = fileSize;
-      } else {
-        throw new Error('Unsupported file size unit. Use "GB" or "MB".');
-      }
+    let selectedFileUnit = 'GB';
+    let selectedSpeedUnit = 'MBps';
 
+    function selectFileUnit(el) {
+      document.querySelectorAll('.button-group')[0].querySelectorAll('.unit-button').forEach(btn => btn.classList.remove('active'));
+      el.classList.add('active');
+      selectedFileUnit = el.getAttribute('data-unit');
+    }
+
+    function selectSpeedUnit(el) {
+      document.querySelectorAll('.button-group')[1].querySelectorAll('.unit-button').forEach(btn => btn.classList.remove('active'));
+      el.classList.add('active');
+      selectedSpeedUnit = el.getAttribute('data-speed');
+    }
+
+    function convertFileSizeToMB(size, unit) {
+      switch(unit) {
+        case 'TB': return size * 1024 * 1024;
+        case 'GB': return size * 1024;
+        case 'MB': return size;
+        default: return size;
+      }
+    }
+
+    function convertSpeedToMBps(speed, unit) {
+      switch(unit) {
+        case 'MBps': return speed;
+        case 'Mbps': return speed / 8;
+        case 'KBps': return speed / 1024;
+        default: return speed;
+      }
+    }
+
+    function calculateUploadTime(fileSize, fileUnit, speedMBps) {
+      const fileSizeMB = convertFileSizeToMB(fileSize, fileUnit);
       const timeSeconds = fileSizeMB / speedMBps;
       const hours = Math.floor(timeSeconds / 3600);
       const minutes = Math.floor((timeSeconds % 3600) / 60);
       const seconds = Math.floor(timeSeconds % 60);
-
       return `${hours}h ${minutes}m ${seconds}s`;
     }
 
     function calculate() {
-      const fileSize = parseFloat(document.getElementById('fileSize').value);
-      const fileUnit = document.getElementById('fileUnit').value;
-      const speedMBps = parseFloat(document.getElementById('speed').value);
+      const fileSizeInput = document.getElementById('fileSize').value.trim();
+      const speedInput = document.getElementById('speed').value.trim();
+      const fileSize = parseFloat(fileSizeInput);
+      const speed = parseFloat(speedInput);
 
-      if (isNaN(fileSize) || isNaN(speedMBps)) {
-        document.getElementById('result').innerText = "Please enter valid numbers.";
+      if (!fileSizeInput || !speedInput || isNaN(fileSize) || isNaN(speed) || speed === 0) {
+        document.getElementById('result').innerText = "Please enter valid numbers for file size and speed.";
         return;
       }
 
-      const result = calculateUploadTime(fileSize, fileUnit, speedMBps);
+      const speedMBps = convertSpeedToMBps(speed, selectedSpeedUnit);
+      const result = calculateUploadTime(fileSize, selectedFileUnit, speedMBps);
       document.getElementById('result').innerText = `Upload time: ${result}`;
     }
   </script>
